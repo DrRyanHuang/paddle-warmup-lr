@@ -2,6 +2,8 @@
 
 This repo is inspired by [torch-warmup-lr](https://github.com/lehduong/torch-warmup-lr).
 
+目前还只是测试版，诸位有什么问题请将代码做简化后，留在issue区.
+
 A wrapper around the Paddlepaddle learning rate scheduler for warming up learning rate. The wrapper allows to specify the following:
 * Standard interface
 * Access to LRScheduler  object's attributes 
