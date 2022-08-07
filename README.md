@@ -15,6 +15,12 @@ A wrapper around the Paddlepaddle learning rate scheduler for warming up learnin
 pip install git+git://github.com/DrRyanHuang/paddle-warmup-lr
 ```
 
+如果你网速不太行，可以使用github加速通道: [https://github.91chi.fun](https://github.91chi.fun)
+```
+pip install git+https://github.91chi.fun/https://github.com/DrRyanHuang/paddle-warmup-lr.git
+```
+
+
 ### Usage
 Simple add a wrapper after constructing `paddle.optimizer.lr.LRScheduler` object:
 
