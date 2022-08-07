@@ -1,42 +1,11 @@
-# Paddlepaddle Scheduler wrapper support learning rate warmup
-
-This repo is inspired by [torch-warmup-lr](https://github.com/lehduong/torch-warmup-lr).
-
-A wrapper around the Paddlepaddle learning rate scheduler for warming up learning rate. The wrapper allows to specify the following:
-* Standard interface
-* Access to LRScheduler  object's attributes 
-* Different strategies for warming up learning rate
-* Load and save state dict
-
-<img src="test/output.png" alt="visualizing learning rate with cosine warmup" width="400">
-
-### Installation
-```
-pip install git+git://github.com/DrRyanHuang/paddle-warmup-lr
-```
-
-### Usage
-Simple add a wrapper after constructing `paddle.optimizer.lr.LRScheduler` object:
-
-```python
-lr_base = 0.1
-lr_scheduler = lr.StepDecay(lr_base, step_size=10, gamma=0.1)
-lr_scheduler = WarmupLR(lr_scheduler, init_lr=0.01, num_warmup=3, warmup_strategy='cos')
-opt = optim.SGD(parameters=model_parmas, learning_rate=lr_scheduler)
-```
-
-+ `init_lr`: learning rate will increase from this value to the initialized learning rate in optimizer (in this case 0.01 -> 0.1).
-+ `num_warmup`: number of steps for warming up learning rate.
-+ `warmup_strategy`: function that learning rate will gradually increase according to. Currently support **cos**, **linear**, **constant** - learning rate will be fixed and equals to *init_lr* during warm-up phase).
-
-### Example
-Below is a runnable example of `WarmupLR`:
-```python
 import paddle
 import paddle.optimizer as optim
 import paddle.optimizer.lr as lr
 import pandas as pd
 import seaborn as sns
+
+import sys
+sys.path.append("..")
 from paddle_warmup_lr import WarmupLR
 
 # StepDecay, MultiStepDecay, ExponentialDecay, ReduceOnPlateau
@@ -87,4 +56,9 @@ if __name__ == '__main__':
     # get scheduler attribute
     print(lr_scheduler.state_dict()['wrapper'])
     print(lr_scheduler.state_dict()['wrapped'])
-```
+
+    scheduler_2 = lr.ReduceOnPlateau(lr_base, threshold=0.99, mode='min', patience=2, cooldown=5)
+    scheduler_2 = WarmupLR(scheduler_2, init_lr=0.01, num_warmup=3, warmup_strategy='cos') 
+    print(scheduler_2._step_count)
+    scheduler_2.load_state_dict(lr_scheduler.state_dict())
+    print(scheduler_2._step_count)
