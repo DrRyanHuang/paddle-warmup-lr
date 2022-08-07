@@ -11,6 +11,6 @@ setup(
     keywords='learning_rate warmup Paddlepaddle',
     packages=find_packages(),
     install_requires=[
-        'paddlepaddle'
+        # 'paddlepaddle' # need to install by yourself
     ],
 )
