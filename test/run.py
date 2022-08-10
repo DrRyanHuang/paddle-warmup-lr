@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # lr_scheduler = lr.MultiStepDecay(lr_base, milestones=[3,6,9], gamma=0.1)
     # lr_scheduler = lr.ReduceOnPlateau(lr_base, threshold=0.99, mode='min', patience=2, cooldown=5)
     lr_scheduler = WarmupLR(lr_scheduler, init_lr=0.01, num_warmup=3, warmup_strategy='cos')
-
+    lr_scheduler.state_dict()
 
     opt = optim.SGD(parameters=model_parmas, 
                     learning_rate=lr_scheduler)

@@ -1,5 +1,6 @@
 import math
 from paddle.optimizer.lr import LRScheduler
+import paddle.optimizer.lr as lr
 
 class WarmupLR(LRScheduler):
     def __init__(self, scheduler, 
@@ -7,14 +8,23 @@ class WarmupLR(LRScheduler):
                         num_warmup=1, 
                         warmup_strategy='linear'):
 
-        if warmup_strategy not in ['linear', 'cos', 'constant']:
-            raise ValueError("Expect warmup_strategy to be one of " \
-            "['linear', 'cos', 'constant'] but got {}".format(warmup_strategy))
 
         self._scheduler = scheduler
         self._init_lr = init_lr
         self._num_warmup = num_warmup
         self._step_count = 0
+        
+        self._set_warmup_strategy(warmup_strategy)
+        
+        # save initial learning rate of each param group
+        # only useful when each param groups having different learning rate
+        self._format_param()
+    
+    
+    def _set_warmup_strategy(self, warmup_strategy):
+        if warmup_strategy not in ['linear', 'cos', 'constant']:
+            raise ValueError("Expect warmup_strategy to be one of " \
+            "['linear', 'cos', 'constant'] but got {}".format(warmup_strategy))
 
         # Define the strategy to warm up learning rate 
         self._warmup_strategy = warmup_strategy
@@ -25,11 +35,8 @@ class WarmupLR(LRScheduler):
             self._warmup_func = self._warmup_linear
         else:
             self._warmup_func = self._warmup_const
-
-        # save initial learning rate of each param group
-        # only useful when each param groups having different learning rate
-        self._format_param()
-
+            
+            
     def __getattr__(self, name):
         return getattr(self._scheduler, name)
     
@@ -41,6 +48,9 @@ class WarmupLR(LRScheduler):
         """
         wrapper_state_dict = {key: value for key, value in self.__dict__.items() if (key !='_scheduler')}
         wrapped_state_dict = {key: value for key, value in self._scheduler.__dict__.items()} 
+        
+        # fix bug: https://github.com/DrRyanHuang/paddle-warmup-lr/issues/1
+        wrapper_state_dict.pop("_warmup_func")
 
         return {'wrapped': wrapped_state_dict, 'wrapper': wrapper_state_dict}
     
@@ -50,8 +60,17 @@ class WarmupLR(LRScheduler):
             state_dict (dict): scheduler state. Should be an object returned
                 from a call to :meth:`state_dict`.
         """
+        
+        # fix bug: https://github.com/DrRyanHuang/paddle-warmup-lr/issues/1
+        old_choice = self._warmup_strategy # 原来的选择
+        
         self.__dict__.update(state_dict['wrapper'])
         self._scheduler.__dict__.update(state_dict['wrapped'])
+        
+        if old_choice == self._warmup_strategy:
+            pass
+        else:
+            self._set_warmup_strategy(self._warmup_strategy)
 
 
     def _format_param(self):
@@ -95,8 +114,6 @@ class WarmupLR(LRScheduler):
         return lr
     
 
-
-
     def step(self, *args):
         if self._step_count <= self._num_warmup:
             
@@ -107,3 +124,14 @@ class WarmupLR(LRScheduler):
             self._step_count += 1 
         else:
             self._scheduler.step(*args)
+            
+if __name__ == "__main__":
+    
+    # Choose different scheduler to test
+    lr_scheduler = lr.StepDecay(0.1, step_size=10, gamma=0.1)
+    # lr_scheduler = lr.MultiStepDecay(lr_base, milestones=[3,6,9], gamma=0.1)
+    # lr_scheduler = lr.ReduceOnPlateau(lr_base, threshold=0.99, mode='min', patience=2, cooldown=5)
+    lr_scheduler = WarmupLR(lr_scheduler, init_lr=0.01, num_warmup=3, warmup_strategy='cos')
+    state = lr_scheduler.state_dict()
+    state["wrapper"]["_warmup_strategy"] = "linear"
+    lr_scheduler.load_state_dict(state)
