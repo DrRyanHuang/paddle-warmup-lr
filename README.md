@@ -21,6 +21,12 @@ pip install git+git://github.com/DrRyanHuang/paddle-warmup-lr
 ```
 pip install git+https://github.91chi.fun/https://github.com/DrRyanHuang/paddle-warmup-lr.git
 ```
+或者直接这样也可，下载下来`paddle-warmup-lr.zip`:
+```
+unzip paddle-warmup-lr.zip
+cd paddle-warmup-lr
+python setup.py install
+```
 
 
 ### Usage
